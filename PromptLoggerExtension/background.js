@@ -15,6 +15,12 @@ chrome.runtime.onMessageExternal.addListener(
 
       // Return true to keep the message channel open for the async storage call
       return true;
+    } else if (request.action === "clearHistory") {
+      chrome.storage.local.set({ promptHistory: [] }, () => {
+        console.log("History cleared via Website");
+        sendResponse({ success: true });
+      });
+      return true;
     }
   },
 );

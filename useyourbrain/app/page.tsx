@@ -16,6 +16,20 @@ export default function Home() {
   const [connectionStatus, setConnectionStatus] = useState("DISCONNECTED");
   const [prompts, setPrompts] = useState([]);
 
+  const clearAllPrompts = () => {
+  if (typeof window !== "undefined" && window.chrome?.runtime) {
+    window.chrome.runtime.sendMessage(
+      EXTENSION_ID,
+      { action: "clearHistory" },
+      (response: any) => {
+        if (response?.success) {
+          setPrompts([]); // Clear the UI immediately
+          console.log("Slate cleaned!");
+        }
+      }
+    );
+  }
+};
 useEffect(() => {
   const chromeAPI = typeof window !== "undefined" ? (window as any).chrome : null;
 
@@ -94,6 +108,12 @@ useEffect(() => {
           >
             Refresh Data
           </button>
+          <button
+  onClick={clearAllPrompts}
+  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+>
+  Clear All History
+</button>
         </div>
       </main>
     </div>
