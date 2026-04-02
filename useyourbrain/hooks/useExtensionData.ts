@@ -2,21 +2,41 @@ import { useState, useEffect } from 'react';
 
 const EXTENSION_ID = "hfleomfalfkdcgopbihklbhlhijkolpc";
 
+// 1. Define getChrome at the top so all functions can see it
+const getChrome = () => typeof window !== "undefined" ? (window as any).chrome : null;
+
 export function useExtensionData() {
   const [prompts, setPrompts] = useState<any[]>([]);
   const [isRecording, setIsRecording] = useState(true);
   const [status, setStatus] = useState("LOADING");
 
+  // 2. Define clearLog as its own function
+  const clearLog = () => {
+    const chromeAPI = getChrome();
+    setPrompts([]);
+
+    // Tell extension to wipe storage
+    if (chromeAPI && chromeAPI.runtime) {
+      chromeAPI.runtime.sendMessage(
+        EXTENSION_ID, 
+        { action: "clearHistory" },
+        (response: any) => {
+          if (chromeAPI.runtime.lastError) {
+            console.error("Clear failed:", chromeAPI.runtime.lastError);
+          }
+        }
+      );
+    }
+  };
+
   const fetchData = () => {
-    // Access chrome via window casting to avoid TS errors
-    const chromeAPI = typeof window !== "undefined" ? (window as any).chrome : null;
+    const chromeAPI = getChrome();
 
     if (chromeAPI && chromeAPI.runtime) {
       chromeAPI.runtime.sendMessage(
         EXTENSION_ID, 
-        { action: "getSettings" }, 
+        { action: "getHistory" }, 
         (res: any) => {
-          // Check for error (e.g., extension disabled or wrong ID)
           if (chromeAPI.runtime.lastError) {
             setStatus("EXTENSION NOT FOUND");
             return;
@@ -34,6 +54,24 @@ export function useExtensionData() {
     }
   };
 
+  // 3. Logic to sync recording state back to extension
+  const syncRecordingState = (newState: boolean) => {
+    const chromeAPI = getChrome();
+    setIsRecording(newState);
+
+    if (chromeAPI && chromeAPI.runtime) {
+      chromeAPI.runtime.sendMessage(
+        EXTENSION_ID, 
+        { action: "updateSettings", isRecording: newState },
+        () => {
+          if (chromeAPI.runtime.lastError) {
+            console.error("Sync failed:", chromeAPI.runtime.lastError);
+          }
+        }
+      );
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -41,10 +79,10 @@ export function useExtensionData() {
   // Return all 6 items needed by page.tsx
   return { 
     prompts, 
-    setPrompts, 
+    setPrompts: clearLog,
     status, 
     fetchData, 
     isRecording, 
-    setIsRecording 
+    setIsRecording: syncRecordingState 
   };
 }

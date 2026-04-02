@@ -8,11 +8,11 @@ import CustomEmail from "@/components/CustomEmail";
 export default function Home() {
   const { 
     prompts, 
-    setPrompts, 
+    setPrompts, // This now triggers the clearHistory message
     status, 
     fetchData, 
     isRecording, 
-    setIsRecording 
+    setIsRecording // This now triggers the updateSettings message
   } = useExtensionData();
 
   const handleToggleRecording = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +48,7 @@ export default function Home() {
               Sync Data
             </button>
             <button 
-              onClick={() => setPrompts([])}
+              onClick={() => setPrompts()}
               className="px-4 py-2 border-2 border-ink bg-ink text-paper font-bold text-xs uppercase tracking-widest cursor-pointer shadow-[4px_4px_0px_0px_var(--color-ink-shadow)]"
             >
               Clear Log
